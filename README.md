@@ -13,13 +13,14 @@ useful because most VPS providers will block or kick you if you use your VPS VPN
    will have its outgoing traffic tunneled over the VPN bridge.
 7. Setup the OpenVPN client configuration (of the bridge).
 8. Edit the OpenVPN client configuration to include `/etc/vpn-bridge/bridge-openvpn.conf`.
-   (Use the config OpenVPN directive).
+   (Use the `config` OpenVPN directive).
 9. Start the VPN bridge.
 
 For bridging to other kinds of VPNs, just arrange that the VPN bridge calls 
 `ENV=custom-env-file.env /etc/vpn-bridge/scripts/route-up.sh tunX` where tunX is the name 
 of the created tun interface after it connects, and also arrange that it calls
 `ENV=custom-env-file.env /etc/vpn-bridge/scripts/route-pre-down.sh tunX` before or after
-it disconnects.
+it disconnects. If the `ENV` variable is not specified, the scripts will use 
+`/etc/vpn-bridge/bridge.env` by default.
 
 Suggestions and bug reports welcome!
