@@ -1,8 +1,8 @@
 ### General purpose VPN and proxy bridge
 
-This is a series of scripts that bridge a server VPN to another VPN connection.
-For example, a private VPS to a commercial VPN provider. This is useful because
-most VPS providers will block or kick you if you use your VPS VPN for P2P.
+This is a series of scripts that bridge a server VPN or proxy (eg: shadowsocks) to 
+another VPN connection (eg: your private VPS to a commercial VPN provider). This is 
+useful because most VPS providers will block or kick you if you use your VPS VPN for P2P.
 
 1. Clone repo to `/etc/vpn-bridge`
 2. Copy bridge.env.example to bridge.env
@@ -23,4 +23,3 @@ of the created tun interface after it connects, and also arrange that it calls
 it disconnects.
 
 Suggestions and bug reports welcome!
-
