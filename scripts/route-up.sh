@@ -17,7 +17,8 @@ iptables -t filter -I OUTPUT -o $dev -j ACCEPT
 iptables -t nat -I POSTROUTING -o $dev -j MASQUERADE
 
 for route_over_vpn_group in $route_over_vpn_groups; do
-    iptables -t mangle -A OUTPUT -m owner --gid-owner $route_over_vpn_group -m conntrack --ctstate NEW,RELATED,ESTABLISHED -j MARK --set-mark $fwmark
+    iptables -t mangle -A OUTPUT -m owner --gid-owner $route_over_vpn_group -m conntrack \
+        --ctstate NEW,RELATED,ESTABLISHED -j MARK --set-mark $fwmark
 done
 
 iptables -t filter -I OUTPUT -m mark --mark $fwmark -j ACCEPT
