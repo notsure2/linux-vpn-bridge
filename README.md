@@ -23,4 +23,27 @@ of the created tun interface after it connects, and also arrange that it calls
 it disconnects. If the `ENV` variable is not specified, the scripts will use 
 `/etc/vpn-bridge/bridge.env` by default.
 
+**NOTE**: The following commands are required in /etc/rc.local (and don't forget to chmod +x):
+```
+#!/bin/sh
+echo 1 > /proc/sys/net/ipv4/ip_forward
+echo 2 > /proc/sys/net/ipv4/conf/all/rp_filter
+echo 1 > /proc/sys/net/ipv4/conf/all/route_localnet
+```
+
+New feature added: Ability to also use TPROXY for TCP and UDP for the bridge, this can be useful
+if you want to bridge these protocols over a faster protocol that needs less CPU (eg: shadowsocks)
+than the main bridge's VPN connection (probably OpenVPN).
+
+Justs etup the tunnel app (eg: ss-redir) to use TPROXY for TCP and UDP, then edit the bridge.env 
+file and set the following variables. You can omit UDP or TCP proxy port to tunnel only one of them.
+The rest of the traffic will go over the main bridge VPN.
+
+```
+# Needs to be a unique number less than 252
+tproxy_route_table_id="201"
+tcp_tproxy_port="48000"
+udp_tproxy_port="48000"
+```
+
 Suggestions and bug reports welcome!
