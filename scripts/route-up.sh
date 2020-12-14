@@ -17,7 +17,7 @@ if [ ! -z "$TPROXY_MARK" ]; then
     [ ! -z "$tcp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p tcp -m conntrack \
         --ctstate NEW,RELATED,ESTABLISHED -j MARK --set-mark $TPROXY_MARK
     [ ! -z "$udp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p udp -m conntrack \
-        --ctstate NEW,RELATED,ESTABLISHED -j MARK --set-mark $TPROXY_MARK
+        --ctstate NEW,RELATED,ESTABLISHED ! --dport 33434:33474 -j MARK --set-mark $TPROXY_MARK
 
     ip route add local default dev lo table $tproxy_route_table_id
     ip rule add fwmark $TPROXY_MARK table $tproxy_route_table_id prio 8
