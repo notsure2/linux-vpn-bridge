@@ -13,11 +13,13 @@ TPROXY_CHAIN=TPROXY_$TPROXY_MARK
 
 if [ ! -z "$TPROXY_MARK" ]; then
     iptables -t mangle -N $TPROXY_CHAIN
-    iptables -t mangle -A $TPROXY_CHAIN -m mark --mark $TPROXY_MARK -j RETURN
+    iptables -t mangle -A $TPROXY_CHAIN -j CONNMARK --restore-mark
+    iptables -t mangle -A $TPROXY_CHAIN -m mark ! --mark 0 -j RETURN
     [ ! -z "$tcp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p tcp -m conntrack \
-        --ctstate NEW,RELATED,ESTABLISHED -j MARK --set-mark $TPROXY_MARK
+        --ctstate NEW -j MARK --set-mark $TPROXY_MARK
     [ ! -z "$udp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p udp -m conntrack \
-        --ctstate NEW,RELATED,ESTABLISHED ! --dport 33434:33474 -j MARK --set-mark $TPROXY_MARK
+        --ctstate NEW ! --dport 33434:33474 -j MARK --set-mark $TPROXY_MARK
+    iptables -t mangle -A $TPROXY_CHAIN -j CONNMARK --save-mark
 
     ip route add local default dev lo table $tproxy_route_table_id
     ip rule add fwmark $TPROXY_MARK table $tproxy_route_table_id prio 8
@@ -41,8 +43,16 @@ for route_over_vpn_group in $route_over_vpn_groups; do
     [ ! -z "$TPROXY_MARK" ] && iptables -t mangle -A OUTPUT -m owner \
         --gid-owner $route_over_vpn_group -m addrtype ! --dst-type LOCAL -j $TPROXY_CHAIN
 
-    iptables -t mangle -A OUTPUT -m owner --gid-owner $route_over_vpn_group -m conntrack \
-        --ctstate NEW,RELATED,ESTABLISHED -m mark --mark 0 -j MARK --set-mark $fwmark
+    VPN_GROUP_CHAIN=GID_$route_over_vpn_group
+    iptables -t mangle -N $VPN_GROUP_CHAIN
+    iptables -t mangle -A $VPN_GROUP_CHAIN -j CONNMARK --restore-mark
+    iptables -t mangle -A $VPN_GROUP_CHAIN -m mark ! --mark 0 -j RETURN
+    iptables -t mangle -A $VPN_GROUP_CHAIN -m owner --gid-owner $route_over_vpn_group -m conntrack \
+        --ctstate NEW -j MARK --set-mark $fwmark
+    iptables -t mangle -A $VPN_GROUP_CHAIN -j CONNMARK --save-mark
+
+    iptables -t mangle -A OUTPUT -m owner \
+        --gid-owner $route_over_vpn_group -m addrtype ! --dst-type LOCAL -j $VPN_GROUP_CHAIN
 done
 
 if [ ! -z "$TPROXY_MARK" ]; then
