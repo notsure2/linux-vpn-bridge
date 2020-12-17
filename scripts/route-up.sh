@@ -13,10 +13,11 @@ TPROXY_CHAIN=TPROXY_$TPROXY_MARK
 
 if [ ! -z "$TPROXY_MARK" ]; then
     iptables -t mangle -N $TPROXY_CHAIN
+    iptables -t mangle -A $TPROXY_CHAIN -m mark ! --mark 0 -j RETURN
     iptables -t mangle -A $TPROXY_CHAIN -j CONNMARK --restore-mark
     iptables -t mangle -A $TPROXY_CHAIN -m mark ! --mark 0 -j RETURN
-    [ ! -z "$tcp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p tcp -m conntrack \
-        --ctstate NEW -j MARK --set-mark $TPROXY_MARK
+    [ ! -z "$tcp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p tcp \
+        --syn -j MARK --set-mark $TPROXY_MARK
     [ ! -z "$udp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p udp -m conntrack \
         --ctstate NEW ! --dport 33434:33474 -j MARK --set-mark $TPROXY_MARK
     iptables -t mangle -A $TPROXY_CHAIN -j CONNMARK --save-mark
@@ -45,6 +46,7 @@ for route_over_vpn_group in $route_over_vpn_groups; do
 
     VPN_GROUP_CHAIN=GID_$route_over_vpn_group
     iptables -t mangle -N $VPN_GROUP_CHAIN
+    iptables -t mangle -A $VPN_GROUP_CHAIN -m mark ! --mark 0 -j RETURN
     iptables -t mangle -A $VPN_GROUP_CHAIN -j CONNMARK --restore-mark
     iptables -t mangle -A $VPN_GROUP_CHAIN -m mark ! --mark 0 -j RETURN
     iptables -t mangle -A $VPN_GROUP_CHAIN -m owner --gid-owner $route_over_vpn_group -m conntrack \
