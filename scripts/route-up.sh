@@ -30,6 +30,7 @@ for route_over_vpn_network in $route_over_vpn_networks; do
     ip rule add to $route_over_vpn_network priority 9 lookup main
     ip rule add from $route_over_vpn_network priority 10 lookup $route_table_id
     iptables -I FORWARD 1 -s $route_over_vpn_network -j ACCEPT
+    iptables -I FORWARD 2 -d $route_over_vpn_network -j ACCEPT
 
     [ ! -z "$TPROXY_MARK" ] && iptables -t mangle -A PREROUTING \
         -s $route_over_vpn_network -m addrtype ! --dst-type LOCAL -j $TPROXY_CHAIN
