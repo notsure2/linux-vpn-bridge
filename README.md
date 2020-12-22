@@ -45,6 +45,8 @@ echo fq_codel > /proc/sys/net/core/default_qdisc
 echo 16384 > /proc/sys/net/ipv4/tcp_notsent_lowat
 ```
 
+#### TPROXY
+
 New feature added: Ability to also use TPROXY for TCP and UDP in the bridge. This can be useful
 if you want to bridge these protocols over a faster protocol that needs less CPU (eg: shadowsocks)
 than the main bridge's VPN connection (probably OpenVPN) especially if on a small VPS with a weak CPU.
@@ -59,5 +61,17 @@ tproxy_route_table_id="201"
 tcp_tproxy_port="48000"
 udp_tproxy_port="48000"
 ```
+
+##### Performance considerations for TPROXY
+
+When using TPROXY, bear in mind that the connection on the server's localhost to the TPROXY
+socket is going to act as an invisible router in the routing chain. This means that the TPROXY
+application's TCP send and receive buffers will need to be lowered to the minimum size needed
+to provide the maximal throughput to avoid a Bufferbloat phenomenon. Symptoms of the buffers
+being too large include having a single TCP segment provide more throughput than using multiple 
+segments to send the same data.
+
+You can calculate the optimal buffer size by using a BDP (bandwidth delay product) calculator
+such as the one [here](https://www.switch.ch/network/tools/tcp_throughput/).
 
 Suggestions and bug reports welcome!
