@@ -31,6 +31,20 @@ echo 2 > /proc/sys/net/ipv4/conf/all/rp_filter
 echo 1 > /proc/sys/net/ipv4/conf/all/route_localnet
 ```
 
+The following commands are additionally recommended for good performance:
+```sh
+#!/bin/sh
+echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
+echo 0 > /proc/sys/net/ipv4/conf/all/accept_source_route
+echo 0 > /proc/sys/net/ipv4/tcp_syncookies
+echo 0 > /proc/sys/net/ipv4/conf/all/accept_redirects
+echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
+echo 0 > /proc/sys/net/ipv4/conf/all/log_martians
+echo bbr > /proc/sys/net/ipv4/tcp_congestion_control
+echo fq_codel > /proc/sys/net/core/default_qdisc
+echo 16384 > /proc/sys/net/ipv4/tcp_notsent_lowat
+```
+
 New feature added: Ability to also use TPROXY for TCP and UDP in the bridge. This can be useful
 if you want to bridge these protocols over a faster protocol that needs less CPU (eg: shadowsocks)
 than the main bridge's VPN connection (probably OpenVPN) especially if on a small VPS with a weak CPU.
