@@ -16,6 +16,9 @@ if [ ! -z "$TPROXY_MARK" ]; then
     iptables -t mangle -A $TPROXY_CHAIN -m mark ! --mark 0 -j RETURN
     iptables -t mangle -A $TPROXY_CHAIN -j CONNMARK --restore-mark
     iptables -t mangle -A $TPROXY_CHAIN -m mark ! --mark 0 -j RETURN
+    for tproxy_exclude_destination in $tproxy_exclude; do
+        iptables -t mangle -A $TPROXY_CHAIN -d $tproxy_exclude_destination -j RETURN
+    done;
     [ ! -z "$tcp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p tcp \
         --syn -j MARK --set-mark $TPROXY_MARK
     [ ! -z "$udp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p udp -m conntrack \
@@ -68,10 +71,6 @@ if [ ! -z "$TPROXY_MARK" ]; then
 fi
 
 iptables -t filter -I OUTPUT -m mark --mark $fwmark -j ACCEPT
-iptables -t nat -A OUTPUT -m mark --mark $fwmark -d 8.8.8.8 -j DNAT --to 127.0.2.1
-iptables -t nat -A OUTPUT -m mark --mark $fwmark -d 8.8.4.4 -j DNAT --to 127.0.2.2
-iptables -t nat -A POSTROUTING -o lo -d 127.0.2.1 -j SNAT --to-source=127.0.0.1
-echo 1 > /proc/sys/net/ipv4/conf/all/route_localnet
 ip rule add from all fwmark $fwmark lookup $route_table_id prio 11
-
+eval "$custom_post_up"
 ip route flush cache

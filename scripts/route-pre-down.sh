@@ -11,6 +11,7 @@ TPROXY_CHAIN=TPROXY_$TPROXY_MARK
 [ ! -z "$TPROXY_MARK" -a -z "$tproxy_route_table_id" ] && \
     echo "tproxy tcp or udp port specified but not tproxy route table id. Aborting." && exit 1;
 
+eval "$custom_pre_down"
 ip route del default dev $dev table $route_table_id
 
 for route_over_vpn_network in $route_over_vpn_networks; do
@@ -39,10 +40,6 @@ for route_over_vpn_group in $route_over_vpn_groups; do
 done
 
 iptables -t filter -D OUTPUT -m mark --mark $fwmark -j ACCEPT
-iptables -t nat -D OUTPUT -m mark --mark $fwmark -d 8.8.8.8 -j DNAT --to 127.0.2.1
-iptables -t nat -D OUTPUT -m mark --mark $fwmark -d 8.8.4.4 -j DNAT --to 127.0.2.2
-iptables -t nat -D POSTROUTING -o lo -d 127.0.2.1 -j SNAT --to-source=127.0.0.1
-echo 0 > /proc/sys/net/ipv4/conf/all/route_localnet
 ip rule del from all fwmark $fwmark lookup $route_table_id prio 11
 
 if [ ! -z "$TPROXY_MARK" ]; then
