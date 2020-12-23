@@ -23,6 +23,23 @@ of the created tun interface after it connects, and also arrange that it calls
 it disconnects. If the `ENV` variable is not specified, the scripts will use 
 `/etc/vpn-bridge/bridge.env` by default.
 
+Here's an example for Wireguard:
+```
+[Interface]
+PrivateKey = your-private-key
+Address = 10.10.1.2/32
+DNS = 1.1.1.1
+Table = off
+PostUp = ENV=/etc/vpn-bridge/bridge-cloudflare.env /etc/vpn-bridge/scripts/route-up.sh %i
+PreDown = ENV=/etc/vpn-bridge/bridge-cloudflare.env /etc/vpn-bridge/scripts/route-pre-down.sh %i
+
+[Peer]
+PublicKey = server-public-key
+AllowedIPs = 0.0.0.0/0
+AllowedIPs = ::/0
+Endpoint = your-server:2408
+```
+
 **NOTE**: The following commands are required in /etc/rc.local (and don't forget to chmod +x):
 ```sh
 #!/bin/sh
