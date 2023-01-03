@@ -11,8 +11,9 @@ TPROXY_CHAIN=TPROXY_$TPROXY_MARK
 [ ! -z "$TPROXY_MARK" -a -z "$tproxy_route_table_id" ] && \
     echo "tproxy tcp or udp port specified but not tproxy route table id. Aborting." && exit 1;
 
+TPROXY_EXCLUDE_IPSET=tproxy_exclude_$TPROXY_MARK
 eval "$custom_pre_down"
-ip route del default dev $dev table $route_table_id
+ip route flush table $route_table_id
 
 for route_over_vpn_network in $route_over_vpn_networks; do
     ip rule del from $route_over_vpn_network table $route_table_id
@@ -31,7 +32,8 @@ for route_over_vpn_group in $route_over_vpn_groups; do
     [ ! -z "$TPROXY_MARK" ] && iptables -t mangle -D OUTPUT -m owner \
         --gid-owner $route_over_vpn_group -m addrtype ! --dst-type LOCAL -j $TPROXY_CHAIN
 
-    iptables -t mangle -D OUTPUT -m owner --gid-owner $route_over_vpn_group -m conntrack --ctstate NEW -j CONNMARK --set-mark $fwmark;
+    iptables -t mangle -D OUTPUT -m owner --gid-owner $route_over_vpn_group -m connmark --mark 0 \
+        -m conntrack --ctstate NEW -j CONNMARK --set-mark $fwmark;
     iptables -t mangle -D OUTPUT -m connmark --mark $fwmark -j MARK --set-mark $fwmark;
 done
 
@@ -41,6 +43,7 @@ ip rule del from all fwmark $fwmark lookup $route_table_id prio 11
 if [ ! -z "$TPROXY_MARK" ]; then
     iptables -t mangle -F $TPROXY_CHAIN
     iptables -t mangle -X $TPROXY_CHAIN
+    ipset destroy $TPROXY_EXCLUDE_IPSET
     ip route del local default dev lo table $tproxy_route_table_id
     ip rule del fwmark $TPROXY_MARK table $tproxy_route_table_id prio 8
 

@@ -13,20 +13,21 @@ TPROXY_CHAIN=TPROXY_$TPROXY_MARK
 
 if [ ! -z "$TPROXY_MARK" ]; then
     iptables -t mangle -N $TPROXY_CHAIN
-    iptables -t mangle -A $TPROXY_CHAIN -m mark ! --mark 0 -j RETURN
-    iptables -t mangle -A $TPROXY_CHAIN -j CONNMARK --restore-mark
-    iptables -t mangle -A $TPROXY_CHAIN -m mark ! --mark 0 -j RETURN
-    for tproxy_exclude_destination in $tproxy_exclude; do
-        iptables -t mangle -A $TPROXY_CHAIN -d $tproxy_exclude_destination -j RETURN
-    done;
-    [ ! -z "$tcp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p tcp \
-        --syn -j MARK --set-mark $TPROXY_MARK
-    [ ! -z "$udp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p udp -m conntrack \
-        --ctstate NEW ! --dport 33434:33474 -j MARK --set-mark $TPROXY_MARK
-    iptables -t mangle -A $TPROXY_CHAIN -j CONNMARK --save-mark
 
-    ip route add local default dev lo table $tproxy_route_table_id
-    ip rule add fwmark $TPROXY_MARK table $tproxy_route_table_id prio 8
+    TPROXY_EXCLUDE_IPSET=tproxy_exclude_$TPROXY_MARK
+    ipset create $TPROXY_EXCLUDE_IPSET nethash;
+    for tproxy_exclude_destination in $tproxy_exclude; do
+        ipset add $TPROXY_EXCLUDE_IPSET $tproxy_exclude_destination;
+    done;
+
+    [ ! -z "$tcp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p tcp \
+        --syn -m conntrack --ctstate NEW -m set ! --match-set $TPROXY_EXCLUDE_IPSET dst -j CONNMARK --set-mark $TPROXY_MARK;
+    [ ! -z "$udp_tproxy_port" ] && iptables -t mangle -A $TPROXY_CHAIN -p udp -m conntrack \
+        --ctstate NEW ! --dport 33434:33474 -m set ! --match-set $TPROXY_EXCLUDE_IPSET dst -j CONNMARK --set-mark $TPROXY_MARK;
+    iptables -t mangle -A $TPROXY_CHAIN -m connmark --mark $TPROXY_MARK -j MARK --set-mark $TPROXY_MARK;
+
+    ip route add local default dev lo table $tproxy_route_table_id;
+    ip rule add fwmark $TPROXY_MARK table $tproxy_route_table_id prio 8;
 fi
 
 for route_over_vpn_network in $route_over_vpn_networks; do
@@ -53,7 +54,8 @@ for route_over_vpn_group in $route_over_vpn_groups; do
     [ ! -z "$TPROXY_MARK" ] && iptables -t mangle -A OUTPUT -m owner \
         --gid-owner $route_over_vpn_group -m addrtype ! --dst-type LOCAL -j $TPROXY_CHAIN
 
-    iptables -t mangle -A OUTPUT -m owner --gid-owner $route_over_vpn_group -m conntrack --ctstate NEW -j CONNMARK --set-mark $fwmark;
+    iptables -t mangle -A OUTPUT -m owner --gid-owner $route_over_vpn_group -m connmark \
+        --mark 0 -m conntrack --ctstate NEW -j CONNMARK --set-mark $fwmark;
     iptables -t mangle -A OUTPUT -m connmark --mark $fwmark -j MARK --set-mark $fwmark;
 done
 
