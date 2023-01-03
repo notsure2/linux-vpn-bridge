@@ -56,3 +56,4 @@ if [ ! -z "$TPROXY_MARK" ]; then
 fi
 
 ip route flush cache
+iptables -t mangle -D POSTROUTING -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu;

@@ -72,3 +72,5 @@ iptables -t filter -I OUTPUT -m mark --mark $fwmark -j ACCEPT
 ip rule add from all fwmark $fwmark lookup $route_table_id prio 11
 eval "$custom_post_up"
 ip route flush cache
+
+iptables -t mangle -A POSTROUTING -p tcp -m tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu;
