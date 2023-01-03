@@ -38,7 +38,12 @@ for route_over_vpn_network in $route_over_vpn_networks; do
     [ ! -z "$TPROXY_MARK" ] && iptables -t mangle -A PREROUTING \
         -s $route_over_vpn_network -m addrtype ! --dst-type LOCAL -j $TPROXY_CHAIN
 done
+
 ip route add default dev $dev table $route_table_id
+ip route show table main | grep -Ev '^default' \
+    | while read ROUTE ; do
+        ip route add table $route_table_id $ROUTE
+      done;
 
 # Must be inserted as the first rule
 iptables -t filter -I OUTPUT -o $dev -j ACCEPT
@@ -48,17 +53,8 @@ for route_over_vpn_group in $route_over_vpn_groups; do
     [ ! -z "$TPROXY_MARK" ] && iptables -t mangle -A OUTPUT -m owner \
         --gid-owner $route_over_vpn_group -m addrtype ! --dst-type LOCAL -j $TPROXY_CHAIN
 
-    VPN_GROUP_CHAIN=GID_$route_over_vpn_group
-    iptables -t mangle -N $VPN_GROUP_CHAIN
-    iptables -t mangle -A $VPN_GROUP_CHAIN -m mark ! --mark 0 -j RETURN
-    iptables -t mangle -A $VPN_GROUP_CHAIN -j CONNMARK --restore-mark
-    iptables -t mangle -A $VPN_GROUP_CHAIN -m mark ! --mark 0 -j RETURN
-    iptables -t mangle -A $VPN_GROUP_CHAIN -m owner --gid-owner $route_over_vpn_group -m conntrack \
-        --ctstate NEW -j MARK --set-mark $fwmark
-    iptables -t mangle -A $VPN_GROUP_CHAIN -j CONNMARK --save-mark
-
-    iptables -t mangle -A OUTPUT -m owner \
-        --gid-owner $route_over_vpn_group -m addrtype ! --dst-type LOCAL -j $VPN_GROUP_CHAIN
+    iptables -t mangle -A OUTPUT -m owner --gid-owner $route_over_vpn_group -m conntrack --ctstate NEW -j CONNMARK --set-mark $fwmark;
+    iptables -t mangle -A OUTPUT -m connmark --mark $fwmark -j MARK --set-mark $fwmark;
 done
 
 if [ ! -z "$TPROXY_MARK" ]; then

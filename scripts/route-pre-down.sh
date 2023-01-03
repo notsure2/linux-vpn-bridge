@@ -31,12 +31,8 @@ for route_over_vpn_group in $route_over_vpn_groups; do
     [ ! -z "$TPROXY_MARK" ] && iptables -t mangle -D OUTPUT -m owner \
         --gid-owner $route_over_vpn_group -m addrtype ! --dst-type LOCAL -j $TPROXY_CHAIN
 
-    VPN_GROUP_CHAIN=GID_$route_over_vpn_group
-    iptables -t mangle -D OUTPUT -m owner \
-        --gid-owner $route_over_vpn_group -m addrtype ! --dst-type LOCAL -j $VPN_GROUP_CHAIN
-
-    iptables -t mangle -F $VPN_GROUP_CHAIN
-    iptables -t mangle -X $VPN_GROUP_CHAIN
+    iptables -t mangle -D OUTPUT -m owner --gid-owner $route_over_vpn_group -m conntrack --ctstate NEW -j CONNMARK --set-mark $fwmark;
+    iptables -t mangle -D OUTPUT -m connmark --mark $fwmark -j MARK --set-mark $fwmark;
 done
 
 iptables -t filter -D OUTPUT -m mark --mark $fwmark -j ACCEPT
