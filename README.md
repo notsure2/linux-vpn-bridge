@@ -86,7 +86,8 @@ socket is going to act as an invisible router in the routing chain. This means t
 application's TCP send and receive buffers will need to be lowered to the minimum size needed
 to provide the maximal throughput to avoid a Bufferbloat phenomenon. Symptoms of the buffers
 being too large include having a single TCP segment provide more throughput than using multiple 
-segments to send the same data.
+segments to send the same data and a wild fluctuation of throughput from very low to maximum in 
+distinctly large exaggerated waves.
 
 You can calculate the optimal buffer size by using a BDP (bandwidth delay product) calculator
 such as the one [here](https://www.switch.ch/network/tools/tcp_throughput/).
