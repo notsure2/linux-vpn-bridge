@@ -41,7 +41,7 @@ for route_over_vpn_network in $route_over_vpn_networks; do
 done
 
 ip route add default dev $dev table $route_table_id
-ip route show table main | grep -Ev '^default' \
+ip route show table main | grep -Ev '^default' | grep -Ev '/1' | grep -Ev '/2' \
     | while read ROUTE ; do
         ip route add table $route_table_id $ROUTE
       done;
