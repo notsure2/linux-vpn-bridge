@@ -16,8 +16,8 @@ eval "$custom_pre_down"
 ip route flush table $route_table_id
 
 for route_over_vpn_network in $route_over_vpn_networks; do
-    ip rule del from $route_over_vpn_network table $route_table_id
-    ip rule del to $route_over_vpn_network lookup main
+    iptables -t mangle -D PREROUTING -s $route_over_vpn_network \
+	-m addrtype ! --dst-type LOCAL -m conntrack --ctstate NEW -j CONNMARK --set-mark $fwmark
     iptables -D FORWARD -s $route_over_vpn_network -j ACCEPT
     iptables -D FORWARD -d $route_over_vpn_network -j ACCEPT
 
